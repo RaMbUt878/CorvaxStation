@@ -148,7 +148,6 @@ function finishLoading() {
 }
 
 // MARK: Authentication
-const authBrowser = document.getElementById('external_auth');
 const authCheckbox = document.getElementById('hide_auth');
 const authButton = document.getElementById('open_auth');
 function toggleAuthModal() {
@@ -157,42 +156,12 @@ function toggleAuthModal() {
 
   if (!checked) {
     call_byond('discord_oauth_close', true);
-    setTimeout(() => {
-      authButton.style.display = '';
-      authBrowser.className = '';
-    }, 200);
   }
 }
 
 function updateAuthBrowser() {
-  authBrowser.className = 'open';
-  authButton.style.display = 'none';
-  setTimeout(() => updateExternalWindowPos(), 1000);
+  authButton.querySelector('.lobby-text').textContent = 'Открыть ссылку ещё раз';
 }
-
-function updateExternalWindowPos() {
-  if (!authBrowser) {
-    return;
-  }
-
-  const titleBarHeight = 43; // I hate Byond sometimes
-  const pixelRatio = window.devicePixelRatio ?? 1;
-  const rect = authBrowser.getBoundingClientRect();
-  const placeholderSize = {
-    pos: [rect.left * pixelRatio, rect.top + titleBarHeight * pixelRatio],
-    size: [
-      (rect.right - rect.left) * pixelRatio,
-      (rect.bottom - rect.top) * pixelRatio,
-    ],
-  };
-
-  BYOND.winset('authwindow', {
-    pos: `${placeholderSize.pos[0]},${placeholderSize.pos[1]}`,
-    size: `${placeholderSize.size[0]},${placeholderSize.size[1]}`,
-  });
-}
-
-window.addEventListener('resize', updateExternalWindowPos);
 
 /* Return focus to Byond after click */
 function reFocus() {

@@ -585,18 +585,6 @@ html.loading {
   z-index: 999;
 }
 
-#external_auth {
-  width: 0px;
-  height: 0px;
-  transition-property: height, width;
-  transition-duration: var(--transition-time);
-}
-
-#external_auth.open {
-  width: 835px;
-  height: 465px;
-}
-
 .lobby_auth {
   background-color: var(--color-section);
   border: 1px solid var(--color-border);
