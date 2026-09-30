@@ -12,49 +12,57 @@
 	outfit.gloves = item_path
 
 // MARK: Tier 0
-/datum/loadout_item/gloves/gloves_black
-	name = "Черные перчатки"
-	item_path = /obj/item/clothing/gloves/color/black
+// /datum/loadout_item/gloves/gloves_black
+//	name = "Черные перчатки"
+//	item_path = /obj/item/clothing/gloves/color/black
 
-/datum/loadout_item/gloves/gloves_orange
-	name = "Оранжевые перчатки"
-	item_path = /obj/item/clothing/gloves/color/orange
+// /datum/loadout_item/gloves/gloves_orange
+//	name = "Оранжевые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/orange
 
-/datum/loadout_item/gloves/gloves_red
-	name = "Красные перчатки"
-	item_path = /obj/item/clothing/gloves/color/red
+// /datum/loadout_item/gloves/gloves_red
+//	name = "Красные перчатки"
+//	item_path = /obj/item/clothing/gloves/color/red
 
-/datum/loadout_item/gloves/gloves_blue
-	name = "Синие перчатки"
-	item_path = /obj/item/clothing/gloves/color/blue
+// /datum/loadout_item/gloves/gloves_blue
+//	name = "Синие перчатки"
+//	item_path = /obj/item/clothing/gloves/color/blue
 
-/datum/loadout_item/gloves/gloves_purple
-	name = "Фиолетовые перчатки"
-	item_path = /obj/item/clothing/gloves/color/purple
+// /datum/loadout_item/gloves/gloves_purple
+//	name = "Фиолетовые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/purple
 
-/datum/loadout_item/gloves/gloves_green
-	name = "Зеленые перчатки"
-	item_path = /obj/item/clothing/gloves/color/green
+// /datum/loadout_item/gloves/gloves_green
+//	name = "Зеленые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/green
 
-/datum/loadout_item/gloves/gloves_grey
-	name = "Серые перчатки"
-	item_path = /obj/item/clothing/gloves/color/grey
+// /datum/loadout_item/gloves/gloves_grey
+//	name = "Серые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/grey
 
-/datum/loadout_item/gloves/gloves_light_brown
-	name = "Светло-коричневые перчатки"
-	item_path = /obj/item/clothing/gloves/color/light_brown
+// /datum/loadout_item/gloves/gloves_light_brown
+//	name = "Светло-коричневые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/light_brown
 
-/datum/loadout_item/gloves/gloves_brown
-	name = "Коричневые перчатки"
-	item_path = /obj/item/clothing/gloves/color/brown
+// /datum/loadout_item/gloves/gloves_brown
+//	name = "Коричневые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/brown
 
-/datum/loadout_item/gloves/gloves_white
-	name = "Белые перчатки"
-	item_path = /obj/item/clothing/gloves/color/white
+// /datum/loadout_item/gloves/gloves_white
+//	name = "Белые перчатки"
+//	item_path = /obj/item/clothing/gloves/color/white
 
 /datum/loadout_item/gloves/gloves_fingerless
 	name = "Перчатки без пальцев"
 	item_path = /obj/item/clothing/gloves/fingerless
+
+/datum/loadout_item/gloves/ring/silver
+	name = "Серебряное кольцо"
+	item_path = /obj/item/clothing/accessory/gloves_accessory/ring/silver
+
+/datum/loadout_item/gloves/ring
+	name = "Золотое кольцо"
+	item_path = /obj/item/clothing/accessory/gloves_accessory/ring
 
 // MARK: Tier 2
 /datum/loadout_item/pocket_items/ringbox_silver
@@ -73,19 +81,8 @@
 	item_path = /obj/item/storage/fancy/ringbox/diamond
 	donator_level = DONATOR_TIER_4
 
-// MARK: Tier 1
-/datum/loadout_item/gloves/biker_gloves
-	name = "Байкерские перчатки"
-	item_path = /obj/item/clothing/gloves/fingerless/biker_gloves
-	donator_level = DONATOR_TIER_1
-
-/datum/loadout_item/gloves/etamin_gloves
-	name = "Перчатки Etamin Industries"
-	item_path = /obj/item/clothing/gloves/etamin_gloves
-	donator_level = DONATOR_TIER_1
-
 // MARK: Tier 2
-/datum/loadout_item/gloves/gloves_rainbow
-	name = "Радужные перчатки"
-	item_path = /obj/item/clothing/gloves/color/rainbow
+/datum/loadout_item/gloves/ring/diamond
+	name = "Кольцо с бриллиантом"
+	item_path = /obj/item/clothing/accessory/gloves_accessory/ring/diamond
 	donator_level = DONATOR_TIER_2

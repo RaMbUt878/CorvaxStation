@@ -465,23 +465,26 @@
 	name += " (Canceled)"
 	log_dynamic("[config_tag]: All headrevs were ineligible after the timer expired, and no replacements could be found. Ruleset canceled.")
 	message_admins("[config_tag]: All headrevs were ineligible after the timer expired, and no replacements could be found. Ruleset canceled.")
-
-/datum/dynamic_ruleset/roundstart/spies
-	name = "Spies"
-	config_tag = "Roundstart Spies"
-	preview_antag_datum = /datum/antagonist/spy
-	pref_flag = ROLE_SPY
-	weight = alist(
-		DYNAMIC_TIER_LOW = 0,
-		DYNAMIC_TIER_LOWMEDIUM = 1,
-		DYNAMIC_TIER_MEDIUMHIGH = 3,
-		DYNAMIC_TIER_HIGH = 3,
-	)
-	min_pop = 10
-	min_antag_cap = list("denominator" = 20, "offset" = 1)
-
-/datum/dynamic_ruleset/roundstart/spies/assign_role(datum/mind/candidate)
-	candidate.add_antag_datum(/datum/antagonist/spy)
+/*
+ * CorvaxStation edit start
+ * /datum/dynamic_ruleset/roundstart/spies
+ *	name = "Spies"
+ *	config_tag = "Roundstart Spies"
+ *	preview_antag_datum = /datum/antagonist/spy
+ *	pref_flag = ROLE_SPY
+ *	weight = alist(
+ *		DYNAMIC_TIER_LOW = 0,
+ *		DYNAMIC_TIER_LOWMEDIUM = 1,
+ *		DYNAMIC_TIER_MEDIUMHIGH = 3,
+ *		DYNAMIC_TIER_HIGH = 3,
+ *	)
+ *	min_pop = 10
+ *	min_antag_cap = list("denominator" = 20, "offset" = 1)
+ *
+ * /datum/dynamic_ruleset/roundstart/spies/assign_role(datum/mind/candidate)
+ *	candidate.add_antag_datum(/datum/antagonist/spy)
+ * CorvaxStation edit end
+ */
 
 /datum/dynamic_ruleset/roundstart/extended
 	name = "Extended"
