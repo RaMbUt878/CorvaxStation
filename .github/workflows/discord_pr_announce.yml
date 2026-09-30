@@ -26,5 +26,5 @@ jobs:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK }}
           include_image: false
           show_author: false
-          avatar_url: https://raw.githubusercontent.com/ss220club/BandaStation/master/.github/images/logo/tg220_logo.png
-          username: BandaStation GitHub
+          avatar_url: https://raw.githubusercontent.com/corvax-team/CorvaxStation/master/.github/images/logo/corvax_logo.png
+          username: CorvaxStation GitHub

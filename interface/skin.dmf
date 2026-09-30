@@ -18,7 +18,7 @@ window "mainwindow"
 		is-default = true
 		saved-params = "pos;size;is-minimized;is-maximized"
 		statusbar = false
-		icon = 'icons\\ui\\common\\ss220_icon.png'
+		icon = 'icons\\ui\\common\\corvax_icon.png'
 		macro = "default"
 	elem "split"
 		type = CHILD

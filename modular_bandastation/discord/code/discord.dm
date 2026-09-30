@@ -1,5 +1,5 @@
 /datum/config_entry/string/discordurl
-	default = "https://discord.gg/SS220"
+	default = "https://discord.gg/6WWapXwDkC"
 
 //Please use mob or src (not usr) in these procs. This way they can be called in the same fashion as procs.
 GAME_VERB_HIDDEN(/client, discord, "discord")

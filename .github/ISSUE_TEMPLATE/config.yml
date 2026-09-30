@@ -4,8 +4,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Feature Request
-    url: https://discord.com/channels/1097181193939730453/1181261198096875670
-    about: Запросы новых фич следует оставлять на форуме ss13-трекер в дискорде.
+    url: https://discord.gg/6WWapXwDkC
+    about: Запросы новых фич следует оставлять в нашем дискорде.
   - name: Exploit Reports
-    url: https://github.com/ss220club/Paradise-SS220/security
+    url: https://github.com/corvax-team/CorvaxStation/security
     about: Критические баги, которые могут быть использованы со злыми намерениями, следует оставлять по ссылке.

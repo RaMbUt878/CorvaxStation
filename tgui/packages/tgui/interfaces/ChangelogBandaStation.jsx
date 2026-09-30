@@ -184,23 +184,23 @@ export class ChangelogBandaStation extends Component {
 
     const header = (
       <Section>
-        <h1>Space Station 13 | BandaStation</h1>
+        <h1>Space Station 13 | CorvaxStation</h1>
         <p>
-          Чейнджлог билда Space Station 13 <b>BandaStation</b>. Изменения,
+          Чейнджлог билда Space Station 13 <b>CorvaxStation</b>. Изменения,
           относящиеся к родительскому проекту - Traditional Games (TG) -
           сгруппированы и отмечены здесь авторством tgstation. Действительные
           псевдонимы и имена авторов изменений можно найти
           <a href="https://github.com//tgstation/tgstation"> здесь</a>. Все иные
-          изменения имеют непосредственное отношение к проекту BandaStation и
+          изменения имеют непосредственное отношение к проекту CorvaxStation и
           имеют сведения об их авторах.
         </p>
         <p>
           {'Текущие мейнтейнеры проекта перечислены '}
-          <a href="https://github.com/orgs/ss220club/teams/maintainers">
+          <a href="https://github.com/orgs/corvax-team/people">
             здесь
           </a>
           {', недавние контрибьюторы проекта отмечены '}
-          <a href="https://github.com/ss220club/BandaStation/pulse/monthly">
+          <a href="https://github.com/corvax-team/CorvaxStation/pulse/monthly">
             тут
           </a>
           .

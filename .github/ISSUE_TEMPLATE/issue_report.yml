@@ -79,7 +79,7 @@ body:
     attributes:
       label: Дополнительная информация
       description: Всё, что вы считаете важным/относящимся к проблеме.
-      placeholder: Я думаю, что проблема начала появляться после этого PR https://github.com/ss220club/Paradise-SS220/pull/583
+      placeholder: Я думаю, что проблема начала появляться после этого PR https://github.com/corvax-team/CorvaxStation/pull/583
 
   - type: textarea
     id: logs
