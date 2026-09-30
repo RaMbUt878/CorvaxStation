@@ -14,17 +14,16 @@
 	req_body["api_token"] = CONFIG_GET(string/tts_token_silero)
 	req_body["text"] = ssml_text
 	req_body["sample_rate"] = 24000
-	req_body["ssml"] = TRUE
 	req_body["speaker"] = seed.value
 	req_body["lang"] = "ru"
 	req_body["remote_id"] = "[world.port]"
-	req_body["put_accent"] = TRUE
-	req_body["put_yo"] = FALSE
-	req_body["symbol_durs"] = list()
 	req_body["format"] = "ogg"
-	req_body["word_ts"] = FALSE
 
-	SShttp.create_async_request(RUSTG_HTTP_METHOD_POST, CONFIG_GET(string/tts_api_url_silero), json_encode(req_body), list("content-type" = "application/json"), proc_callback)
+	// json_encode пишет TRUE как 1, а строгие реализации API принимают только true/false
+	var/body = json_encode(req_body)
+	body = copytext(body, 1, length(body)) + {","ssml":true,"put_accent":true,"put_yo":false,"word_ts":false,"symbol_durs":\[]}"}
+
+	SShttp.create_async_request(RUSTG_HTTP_METHOD_POST, CONFIG_GET(string/tts_api_url_silero), body, list("content-type" = "application/json"), proc_callback)
 
 	return TRUE
 
@@ -32,7 +31,8 @@
 	var/data = json_decode(response.body)
 	// log_debug(response.body)
 
-	if(data["timings"]["003_tts_time"] > 3)
+	var/list/timings = data["timings"]
+	if(timings && timings["003_tts_time"] > 3)
 		is_throttled = TRUE
 		throttled_until = world.time + 15 SECONDS
 
