@@ -150,17 +150,30 @@ function finishLoading() {
 // MARK: Authentication
 const authCheckbox = document.getElementById('hide_auth');
 const authButton = document.getElementById('open_auth');
-function toggleAuthModal() {
-  const checked = authCheckbox.checked;
-  authCheckbox.checked = !checked;
+const AUTH_POLL_INTERVAL = 3000;
+const AUTH_POLL_TIMEOUT = 10 * 60 * 1000;
+let authPoll = null;
 
-  if (!checked) {
-    call_byond('discord_oauth_close', true);
-  }
+function toggleAuthModal() {
+  authCheckbox.checked = !authCheckbox.checked;
 }
 
+// once the link is found the server redraws the lobby and the modal goes away with it
 function updateAuthBrowser() {
   authButton.querySelector('.lobby-text').textContent = 'Открыть ссылку ещё раз';
+  if (authPoll) {
+    return;
+  }
+
+  const startedAt = Date.now();
+  authPoll = setInterval(() => {
+    if (Date.now() - startedAt > AUTH_POLL_TIMEOUT) {
+      clearInterval(authPoll);
+      authPoll = null;
+      return;
+    }
+    call_byond('discord_oauth_check', true);
+  }, AUTH_POLL_INTERVAL);
 }
 
 /* Return focus to Byond after click */

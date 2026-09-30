@@ -3,6 +3,8 @@
 		return FALSE
 	return ..()
 
+/client/var/next_discord_link_check = 0
+
 /client/proc/verify_in_discord_central()
 	if(!SScentral.can_run())
 		to_chat(src, span_warning("Привязка Discord сейчас недоступна."))
