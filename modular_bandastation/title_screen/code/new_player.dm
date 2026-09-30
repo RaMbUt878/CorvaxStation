@@ -13,7 +13,10 @@
 	if(href_list["discord_oauth"])
 		client?.verify_in_discord_central()
 
-	else if(href_list["discord_oauth_close"])
+	else if(href_list["discord_oauth_check"])
+		if(world.time < client.next_discord_link_check)
+			return
+		client.next_discord_link_check = world.time + 2 SECONDS
 		SScentral.update_player_discord_async(client.ckey, client)
 
 	else if(href_list["changelog"])
