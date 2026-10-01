@@ -40,11 +40,6 @@
 	health = 80
 	resting = TRUE
 
-/mob/living/basic/lizard/big/crocodile/gena
-	name = "Гена"
-	desc = "Крокодил обожающий музыкальные инструменты и плюшевые игрушки. Пожевать."
-	faction = list("neutral")
-
 // rats
 /mob/living/basic/mouse/rat/gray/ratatui
 	name = "Рататуй"

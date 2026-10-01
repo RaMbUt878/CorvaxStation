@@ -80202,7 +80202,6 @@
 /obj/effect/turf_decal/siding/white{
 	dir = 5
 	},
-/mob/living/basic/lizard/big/crocodile/gena,
 /turf/open/water/alternative/muddy/no_fishing,
 /area/station/service/kitchen/abandoned)
 "tCb" = (

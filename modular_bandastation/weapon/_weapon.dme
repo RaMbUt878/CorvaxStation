@@ -7,7 +7,6 @@
 #include "code/melee/vibroblade.dm"
 #include "code/melee/electrostaff.dm"
 #include "code/melee/centcom/_enchantment_datum.dm"
-#include "code/melee/centcom/baseball_bat.dm"
 #include "code/melee/centcom/legendary_swords.dm"
 #include "code/melee/centcom/rapier.dm"
 

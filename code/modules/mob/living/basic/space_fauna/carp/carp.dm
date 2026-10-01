@@ -118,7 +118,7 @@
 		tamed(tamer, feedback = FALSE)
 		befriend(tamer)
 	else
-		var/list/food_types = string_list(list(/obj/item/food/meat)) /// BANDASTATION EDIT - CROCODILE
+		var/static/list/food_types = list(/obj/item/food/meat)
 		AddComponent(/datum/component/tameable, food_types = food_types, tame_chance = 10, bonus_tame_chance = 5)
 
 	teleport = new(src)
