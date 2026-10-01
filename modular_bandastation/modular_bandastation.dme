@@ -96,11 +96,3 @@
 #include "weapon/_weapon.dme"
 #include "world_topics/_world_topics.dme"
 // --- MODULES END --- //
-
-// --- PRIME --- //
-// #define DISABLE_PRIME_MODPACKS
-// Чтобы отлючить модпаки прайма, нужно раскоментить строку "#define DISABLE_PRIME_MODPACKS" выше.
-// Модпаки включены по умолчанию для запуска всех тестов и для этого кода тоже.
-#ifndef DISABLE_PRIME_MODPACKS
-#include "prime_only/_prime_only.dme"
-#endif
