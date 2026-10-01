@@ -1,4 +1,0 @@
-author: "YesImMorty"
-delete-after: True
-changes:
-  - qol: "Окно привязки Discord закрывается само после авторизации."
