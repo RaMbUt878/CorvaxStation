@@ -1,0 +1,5 @@
+author: "YesImMorty"
+delete-after: True
+changes:
+  - rscdel: "Удалены Apex Nanotrasen Navy Field Officer и система Khaaroot"
+  - rscdel: "Удалены нательные камеры"
