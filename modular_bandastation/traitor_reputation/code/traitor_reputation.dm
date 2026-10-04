@@ -93,10 +93,6 @@
 		return 150
 	return 0
 
-/datum/traitor_reputation_system/proc/can_purchase_uplink_item(mob/user, datum/uplink_item/item)
-	var/minimum_reputation = get_traitor_uplink_minimum_reputation(item)
-	return reputation >= minimum_reputation
-
 /datum/traitor_reputation_system
 	var/name = "Агент"
 	var/reputation = 0
@@ -123,6 +119,10 @@
 	var/list/active_contracts = list()
 	var/list/active_events = list()
 	var/datum/traitor_contract/rotating_contract
+
+	proc/can_purchase_uplink_item(mob/user, datum/uplink_item/item)
+		var/minimum_reputation = get_traitor_uplink_minimum_reputation(item)
+		return reputation >= minimum_reputation
 
 	var/global/list/TRAITOR_REPUTATION_TIERS = list(
 		list("threshold" = 150, "bonus_tc" = 4, "unlocks" = list("agent_chat", "first_items"), "threat_level" = "caution"),
