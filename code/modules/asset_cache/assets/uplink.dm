@@ -26,6 +26,7 @@
 				"icon" = actual_item.icon,
 				"icon_state" = actual_item.icon_state,
 				"cost" = item.cost,
+				"minimum_traitor_reputation" = get_traitor_uplink_minimum_reputation(item),
 				"desc" = item.desc,
 				"category" = item.category ? initial(item.category.name) : null,
 				"purchasable_from" = item.purchasable_from,
