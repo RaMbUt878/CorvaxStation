@@ -173,7 +173,7 @@ GLOBAL_LIST_EMPTY(traitor_agent_chat_messages)
 		)
 	return TRUE
 
-/datum/modpack/traitor_reputation/proc/get_manifest_record(mob/living/target)
+/datum/modpack/traitor_reputation/proc/get_manifest_record(mob/living/target) as /datum/record/crew
 	if(!target)
 		return null
 	for(var/datum/record/crew/crew_record as anything in GLOB.manifest.general)

@@ -143,7 +143,7 @@
 	target.mind.add_antag_datum(/datum/antagonist/traitor)
 	to_chat(target, span_notice("Вербовка завершена. Загляните в аплинк, чтобы узнать дальнейшие инструкции."))
 
-/datum/component/uplink/proc/get_traitor_reputation_modpack()
+/datum/component/uplink/proc/get_traitor_reputation_modpack() as /datum/modpack/traitor_reputation
 	return get_loaded_traitor_reputation_modpack()
 
 /datum/traitor_telecomms_sabotage
