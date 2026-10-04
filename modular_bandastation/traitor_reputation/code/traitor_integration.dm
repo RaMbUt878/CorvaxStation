@@ -12,7 +12,7 @@
 	reputation_system.antagonist_owner = src
 	reputation_system.uplink_handler = uplink_handler
 	if(uplink_handler)
-		uplink_handler.additional_purchase_check = CALLBACK(reputation_system, PROC_REF(can_purchase_uplink_item))
+		uplink_handler.additional_purchase_check = CALLBACK(reputation_system, TYPE_PROC_REF(/datum/traitor_reputation_system, can_purchase_uplink_item))
 	reputation_system.schedule_random_activity()
 	passive_reputation_timer = addtimer(CALLBACK(src, PROC_REF(passive_reputation_tick)), 1 MINUTES, TIMER_STOPPABLE)
 
