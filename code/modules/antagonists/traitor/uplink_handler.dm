@@ -30,12 +30,15 @@
 	var/datum/callback/can_replace_objectives
 	/// Callback which performs that operation
 	var/datum/callback/replace_objectives
+	/// Optional additional purchase validation.
+	var/datum/callback/additional_purchase_check
 	///Reference to a contractor hub that the infiltrator can run, if they purchase it.
 	var/datum/contractor_hub/contractor_hub
 
 /datum/uplink_handler/Destroy(force)
 	can_replace_objectives = null
 	replace_objectives = null
+	additional_purchase_check = null
 	return ..()
 
 /// Called whenever an update occurs on this uplink handler. Used for UIs
@@ -80,6 +83,9 @@
 		return FALSE
 
 	if(telecrystals < to_purchase.cost)
+		return FALSE
+
+	if(additional_purchase_check && !additional_purchase_check.Invoke(user, to_purchase))
 		return FALSE
 
 	var/current_stock = item_stock[to_purchase.stock_key]

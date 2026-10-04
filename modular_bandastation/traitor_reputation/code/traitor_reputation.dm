@@ -93,15 +93,9 @@
 		return 150
 	return 0
 
-/datum/uplink_handler/proc/can_purchase_item(mob/user, datum/uplink_item/to_purchase)
-	. = ..()
-	if(!. || debug_mode)
-		return
-	var/datum/antagonist/traitor/traitor_datum = owner?.has_antag_datum(/datum/antagonist/traitor)
-	if(!traitor_datum?.reputation_system)
-		return
-	var/minimum_reputation = get_traitor_uplink_minimum_reputation(to_purchase)
-	return traitor_datum.reputation_system.reputation >= minimum_reputation
+/datum/traitor_reputation_system/proc/can_purchase_uplink_item(mob/user, datum/uplink_item/item)
+	var/minimum_reputation = get_traitor_uplink_minimum_reputation(item)
+	return reputation >= minimum_reputation
 
 /datum/traitor_reputation_system
 	var/name = "Агент"
@@ -116,6 +110,7 @@
 	var/threat_level = "caution"
 	var/agent_preview_id = ""
 	var/next_random_activity = 0
+	var/next_agent_chat_message = 0
 	var/random_activity_timer
 	var/datum/antagonist/traitor/antagonist_owner
 	var/datum/uplink_handler/uplink_handler
@@ -203,9 +198,9 @@
 				agent_gender = "женский"
 		if(agent?.mind?.assigned_role)
 			var/datum/job/agent_role = agent.mind.assigned_role
-			var/department_type = agent_role.departments_list?[1]
+			var/datum/job_department/department_type = agent_role.departments_list?[1]
 			if(department_type)
-				department = initial(department_type.department_name)
+				department = department_type::department_name
 			agent_job = job_title_ru(agent_role.title)
 		if(agent)
 			agent_name = agent.real_name
@@ -520,6 +515,17 @@
 
 	proc/build_tgui_payload()
 		var/list/tier_data = list()
+		var/list/chat_messages = list()
+		if(can_access_agent_chat())
+			for(var/list/chat_message as anything in GLOB.traitor_agent_chat_messages)
+				if(chat_message["round_start_time"] != SSticker.round_start_time)
+					continue
+				chat_messages += list(list(
+					"sender" = chat_message["sender"],
+					"message" = chat_message["message"],
+					"timestamp" = chat_message["timestamp"],
+					"outgoing" = chat_message["sender"] == name,
+				))
 		for(var/list/tier as anything in TRAITOR_REPUTATION_TIERS)
 			tier_data += list(list(
 				"threshold" = tier["threshold"],
@@ -579,7 +585,8 @@
 			"services" = list(
 				"contracts" = contract_data,
 				"events" = event_data,
-				"market_items" = services.market_items
+				"market_items" = services.market_items,
+				"agent_chat_messages" = chat_messages
 			),
 			"tabs" = list("services", "reinforcement", "black_market")
 		)

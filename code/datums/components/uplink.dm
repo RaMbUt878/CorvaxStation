@@ -269,7 +269,7 @@
 		if("traitor_reputation_action")
 			if(ui.user.mind != uplink_handler.owner)
 				return TRUE
-			handle_traitor_reputation_action(params["perk"], ui.user, params["contract_id"])
+			handle_traitor_reputation_action(params["perk"], ui.user, params["contract_id"], params["message"])
 	return TRUE
 
 

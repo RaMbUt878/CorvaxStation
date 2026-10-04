@@ -11,6 +11,8 @@
 			reputation_system.name = owner.name
 	reputation_system.antagonist_owner = src
 	reputation_system.uplink_handler = uplink_handler
+	if(uplink_handler)
+		uplink_handler.additional_purchase_check = CALLBACK(reputation_system, PROC_REF(can_purchase_uplink_item))
 	reputation_system.schedule_random_activity()
 	passive_reputation_timer = addtimer(CALLBACK(src, PROC_REF(passive_reputation_tick)), 1 MINUTES, TIMER_STOPPABLE)
 
@@ -27,9 +29,11 @@
 	if(reputation_system)
 		reputation_system.stop_random_activity()
 		reputation_system.antagonist_owner = null
+		if(uplink_handler)
+			uplink_handler.additional_purchase_check = null
 	return ..()
 
-/datum/component/uplink/proc/handle_traitor_reputation_action(perk, mob/user, contract_id)
+/datum/component/uplink/proc/handle_traitor_reputation_action(perk, mob/user, contract_id, message)
 	var/datum/antagonist/traitor/traitor_datum = user.mind?.has_antag_datum(/datum/antagonist/traitor)
 	if(!traitor_datum?.reputation_system)
 		return
@@ -41,14 +45,31 @@
 		if("agent_chat")
 			if(!system.can_access_agent_chat())
 				return
-			var/message = tgui_input_text(user, "Отправить сообщение другим предателям.", "Канал агентов", max_length = 200)
-			if(!message || !length_char(message))
+			if(!istext(message) || world.time < system.next_agent_chat_message)
 				return
+			var/clean_message = trim(sanitize(message), 200)
+			if(!length_char(clean_message))
+				return
+			if(length(GLOB.traitor_agent_chat_messages))
+				var/list/first_chat_message = GLOB.traitor_agent_chat_messages[1]
+				if(first_chat_message["round_start_time"] != SSticker.round_start_time)
+					GLOB.traitor_agent_chat_messages.Cut()
+			GLOB.traitor_agent_chat_messages += list(list(
+				"sender" = system.name,
+				"message" = clean_message,
+				"timestamp" = time2text(world.timeofday, "hh:mm"),
+				"round_start_time" = SSticker.round_start_time,
+			))
+			system.next_agent_chat_message = world.time + 1 SECONDS
+			if(length(GLOB.traitor_agent_chat_messages) > 100)
+				GLOB.traitor_agent_chat_messages.Cut(1, 2)
 			for(var/mob/living/player as anything in GLOB.player_list)
 				var/datum/antagonist/traitor/recipient = player.mind?.has_antag_datum(/datum/antagonist/traitor)
-				if(recipient && player != user)
-					to_chat(player, span_notice("<b>[system.name]</b> агентам: [message]"))
-			to_chat(user, span_notice("Сообщение отправлено в канал агентов."))
+				if(!recipient?.reputation_system?.can_access_agent_chat())
+					continue
+				var/datum/component/uplink/recipient_uplink = player.mind.find_syndicate_uplink()
+				if(recipient_uplink)
+					SStgui.update_uis(recipient_uplink)
 		if("telecom_sabotage")
 			if(!system.can_sabotage_telecomms())
 				return

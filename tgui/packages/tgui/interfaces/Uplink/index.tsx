@@ -9,6 +9,7 @@ import {
   ProgressBar,
   Section,
   Stack,
+  TextArea,
   Tabs,
 } from 'tgui-core/components';
 import { fetchRetry } from 'tgui-core/http';
@@ -109,6 +110,12 @@ type TraitorReputationData = {
       reward_tc: number;
       reward_reputation: number;
       tc_drop_chance: number;
+    }[];
+    agent_chat_messages: {
+      sender: string;
+      message: string;
+      timestamp: string;
+      outgoing: BooleanLike;
     }[];
     market_items: string[];
   };
@@ -215,6 +222,8 @@ const ReputationPanel = (props: { reputation: TraitorReputationData }) => {
   const { act } = useBackend<UplinkData>();
   const { services, stats, tiers } = reputation;
   const [showStatistics, setShowStatistics] = useState(false);
+  const [showAgentChat, setShowAgentChat] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
   const nextTier = tiers.find((tier) => tier.threshold > reputation.reputation);
   const previousTierThreshold = tiers.reduce(
     (threshold, tier) =>
@@ -225,9 +234,33 @@ const ReputationPanel = (props: { reputation: TraitorReputationData }) => {
     ? (reputation.reputation - previousTierThreshold) /
       (nextTier.threshold - previousTierThreshold)
     : 1;
+  const sendAgentMessage = () => {
+    if (!chatMessage.trim()) {
+      return;
+    }
+    act('traitor_reputation_action', {
+      perk: 'agent_chat',
+      message: chatMessage,
+    });
+    setChatMessage('');
+  };
 
   return (
-    <Section fill scrollable title={`Досье агента: ${reputation.name}`}>
+    <Section
+      fill
+      scrollable
+      title={`Досье агента: ${reputation.name}`}
+      buttons={
+        reputation.reputation >= 150 && (
+          <Button
+            icon={showAgentChat ? 'address-card' : 'comments'}
+            onClick={() => setShowAgentChat(!showAgentChat)}
+          >
+            {showAgentChat ? 'Досье агента' : 'Канал агентов'}
+          </Button>
+        )
+      }
+    >
       {showStatistics && (
         <Modal width="500px" align="center">
           <Section
@@ -247,6 +280,65 @@ const ReputationPanel = (props: { reputation: TraitorReputationData }) => {
               </Stack.Item>
               <Stack.Item>Заработано: {stats.earned_tc} TC</Stack.Item>
               <Stack.Item>Потрачено: {stats.spent_tc} TC</Stack.Item>
+            </Stack>
+          </Section>
+        </Modal>
+      )}
+      {showAgentChat && (
+        <Modal width="650px" align="center">
+          <Section
+            title="Канал агентов"
+            buttons={
+              <Button
+                icon="times"
+                color="bad"
+                onClick={() => setShowAgentChat(false)}
+              />
+            }
+          >
+            <Stack vertical fill>
+              <Stack.Item grow>
+                <Section fill scrollable>
+                  <Stack vertical>
+                    {services.agent_chat_messages.length ? (
+                      services.agent_chat_messages.map((message, index) => (
+                        <Stack.Item key={`${message.timestamp}-${index}`}>
+                          <Section
+                            title={`${message.sender} · ${message.timestamp}`}
+                            textAlign={message.outgoing ? 'right' : 'left'}
+                          >
+                            {message.message}
+                          </Section>
+                        </Stack.Item>
+                      ))
+                    ) : (
+                      <Box color="label">Сообщений пока нет.</Box>
+                    )}
+                  </Stack>
+                </Section>
+              </Stack.Item>
+              <Stack.Item>
+                <Stack align="center">
+                  <Stack.Item grow>
+                    <TextArea
+                      value={chatMessage}
+                      placeholder="Сообщение агентам..."
+                      maxLength={200}
+                      onChange={setChatMessage}
+                      onEnter={sendAgentMessage}
+                    />
+                  </Stack.Item>
+                  <Stack.Item>
+                    <Button
+                      icon="arrow-right"
+                      disabled={!chatMessage.trim()}
+                      onClick={sendAgentMessage}
+                    >
+                      Отправить
+                    </Button>
+                  </Stack.Item>
+                </Stack>
+              </Stack.Item>
             </Stack>
           </Section>
         </Modal>
