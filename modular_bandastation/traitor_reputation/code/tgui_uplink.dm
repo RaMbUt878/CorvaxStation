@@ -2,40 +2,40 @@
 	var/datum/traitor_reputation_system/system = null
 	var/list/tab_order = list("services", "reinforcement", "black_market")
 
-	proc/Initialize(datum/traitor_reputation_system/system_input)
-		system = system_input
-		return src
+/datum/tgui_module/traitor_reputation/proc/Initialize(datum/traitor_reputation_system/system_input)
+	system = system_input
+	return src
 
-	proc/get_data()
-		if(!system)
-			return list("error" = "missing_traitor_reputation_system")
-		return system.build_tgui_payload()
+/datum/tgui_module/traitor_reputation/proc/get_data()
+	if(!system)
+		return list("error" = "missing_traitor_reputation_system")
+	return system.build_tgui_payload()
 
-	proc/get_tabs()
-		return tab_order
+/datum/tgui_module/traitor_reputation/proc/get_tabs()
+	return tab_order
 
-	proc/activate_tab(tab_id)
-		if(tab_id in tab_order)
-			return tab_id
-		return null
+/datum/tgui_module/traitor_reputation/proc/activate_tab(tab_id)
+	if(tab_id in tab_order)
+		return tab_id
+	return null
 
 /datum/tgui_panel/traitor_reputation
 	var/datum/tgui_module/traitor_reputation/module = null
 
-	proc/Initialize(datum/traitor_reputation_system/system_input)
-		module = new
-		module.Initialize(system_input)
-		return src
+/datum/tgui_panel/traitor_reputation/proc/Initialize(datum/traitor_reputation_system/system_input)
+	module = new
+	module.Initialize(system_input)
+	return src
 
-	proc/build_view()
-		if(!module)
-			return list("error" = "missing_module")
-		return module.get_data()
+/datum/tgui_panel/traitor_reputation/proc/build_view()
+	if(!module)
+		return list("error" = "missing_module")
+	return module.get_data()
 
-	proc/open_for(mob/user)
-		if(user)
-			return build_view()
-		return list("error" = "no_user")
+/datum/tgui_panel/traitor_reputation/proc/open_for(mob/user)
+	if(user)
+		return build_view()
+	return list("error" = "no_user")
 
 /proc/test_traitor_reputation_modpack()
 	var/datum/traitor/traitor = new
