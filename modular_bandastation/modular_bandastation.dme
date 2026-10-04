@@ -89,6 +89,7 @@
 #include "tgui_who/_tgui_who.dme"
 #include "ticket_manager/_ticket_manager.dme"
 #include "title_screen/_title_screen.dme"
+#include "traitor_reputation/_traitor_reputation.dme"
 #include "translations/_translations.dme"
 #include "tts/_tts.dme"
 #include "turfs/_turfs.dme"
