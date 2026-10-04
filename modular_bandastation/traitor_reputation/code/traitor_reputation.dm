@@ -18,35 +18,44 @@
 	var/location = "unknown"
 	var/description = ""
 	var/required_target = ""
-	var/required_item = ""
+	var/required_role = ""
+	var/required_item = null
+	var/item_tier = ""
+	var/tc_drop_chance = 0
+	var/contract_id = ""
 	var/accepted = FALSE
 
-	proc/Initialize(contract_type_input, reward_input, rep_input, location_input = "unknown", required_target_input = "", required_item_input = "")
+	proc/Initialize(contract_type_input, reward_input, rep_input, location_input = "unknown", required_target_input = "", required_item_input = "", required_role_input = "")
 		contract_type = contract_type_input
 		reward_tc = reward_input
 		reputation_reward = rep_input
 		location = location_input
 		required_target = required_target_input
+		required_role = required_role_input
 		required_item = required_item_input
-		description = "[contract_type] contract for [location]."
+		description = "Контракт «[contract_type]» для сектора «[location]»."
 		return src
 
 /datum/traitor_event
+	var/event_id = ""
 	var/event_name = ""
 	var/description = ""
 	var/location = "unknown"
 	var/reward_tc = 0
 	var/reward_reputation = 0
+	var/tc_drop_chance = 100
 	var/is_agent_target = TRUE
 	var/priority = 0
 	var/alerted = FALSE
 
-	proc/Initialize(event_name_input, description_input, location_input = "unknown", reward_tc_input = 0, reward_rep_input = 0, is_agent_target_input = TRUE, priority_input = 0)
+	proc/Initialize(event_name_input, description_input, location_input = "unknown", reward_tc_input = 0, reward_rep_input = 0, is_agent_target_input = TRUE, priority_input = 0, event_id_input = "", tc_drop_chance_input = 100)
+		event_id = event_id_input || REF(src)
 		event_name = event_name_input
 		description = description_input
 		location = location_input
 		reward_tc = reward_tc_input
 		reward_reputation = reward_rep_input
+		tc_drop_chance = tc_drop_chance_input
 		is_agent_target = is_agent_target_input
 		priority = priority_input
 		alerted = TRUE
@@ -71,8 +80,9 @@
 		return src
 
 /datum/traitor_reputation_system
-	var/name = "Agent"
+	var/name = "Агент"
 	var/reputation = 0
+	var/passive_reputation_gain = 5
 	var/total_tc = 0
 	var/earned_tc = 0
 	var/spent_tc = 0
@@ -82,6 +92,8 @@
 	var/threat_level = "caution"
 	var/agent_preview_id = ""
 	var/next_random_activity = 0
+	var/datum/antagonist/traitor/antagonist_owner
+	var/datum/uplink_handler/uplink_handler
 	var/random_activity_min_delay = 5 MINUTES
 	var/random_activity_max_delay = 15 MINUTES
 	var/random_activity_chance = 20
@@ -102,7 +114,7 @@
 	proc/Initialize(datum/traitor/traitor_holder = null, datum/uplink_controller/uplink_controller_input = null)
 		name = traitor_holder ? ckey(traitor_holder.name) : "Agent"
 		if(!name || name == "")
-			name = "Agent"
+			name = "Агент"
 		services = new
 		controller = uplink_controller_input
 		if(!controller)
@@ -112,6 +124,7 @@
 			uplink_link.Initialize(src, controller)
 		traitor_owner = traitor_holder
 		agent_preview_id = traitor_holder ? "" : ""
+		generate_item_contract()
 		schedule_random_activity()
 		return src
 
@@ -134,8 +147,16 @@
 	proc/add_reputation(amount)
 		if(amount < 0)
 			CRASH("Reputation gain must be non-negative.")
+		var/old_reputation = reputation
 		reputation += amount
 		update_threat_level()
+		for(var/list/tier as anything in TRAITOR_REPUTATION_TIERS)
+			var/threshold = tier["threshold"]
+			if(old_reputation < threshold && reputation >= threshold && uplink_handler)
+				var/tier_bonus = tier["bonus_tc"]
+				uplink_handler.add_telecrystals(tier_bonus)
+				earned_tc += tier_bonus
+		uplink_handler?.on_update()
 		return reputation
 
 	proc/get_current_tier()
@@ -199,7 +220,10 @@
 		var/roll = rand(1, 100)
 
 		if(roll <= 65)
-			generate_contract(contract_type, location)
+			if(prob(40))
+				generate_item_contract()
+			else
+				generate_contract(contract_type, location)
 		else
 			var/list/event_templates = list(
 				list("name" = "very_important_cargo", "desc" = "Ключ груза пересёк станцию. Восстановите поставку."),
@@ -216,16 +240,156 @@
 		var/rep_reward = 25 + rand(0, 150)
 		var/datum/traitor_contract/contract = new
 		contract.Initialize(contract_type, reward, rep_reward, location, required_target, required_item)
+		contract.contract_id = REF(contract)
 		services.add_contract(contract)
 		active_contracts += contract
+		uplink_handler?.on_update()
 		return contract
 
-	proc/create_agent_event(event_name, description, location = "unknown")
+	proc/generate_item_contract()
+		for(var/datum/traitor_contract/existing_contract as anything in active_contracts)
+			if(existing_contract.contract_type == "item_retrieval" && !existing_contract.accepted)
+				return existing_contract
+
+		var/round_time = world.time - SSticker.round_start_time
+		var/item_tier = "easy"
+		if(round_time >= 30 MINUTES && prob(20))
+			item_tier = "hard"
+		else if(round_time >= 15 MINUTES && prob(40))
+			item_tier = "medium"
+
+		var/list/item_types
+		var/list/item_names
+		var/reward_min
+		var/reward_max
+		var/tc_min
+		var/tc_max
+		switch(item_tier)
+			if("easy")
+				item_types = list(
+					/obj/item/paper,
+					/obj/item/pen,
+					/obj/item/soap,
+					/obj/item/flashlight,
+					/obj/item/crowbar,
+				)
+				item_names = list("лист бумаги", "ручка", "мыло", "фонарь", "лом")
+				reward_min = 5
+				reward_max = 10
+				tc_min = 1
+				tc_max = 2
+			if("medium")
+				item_types = list(
+					/obj/item/wrench,
+					/obj/item/screwdriver,
+					/obj/item/hand_labeler,
+					/obj/item/camera,
+					/obj/item/weldingtool,
+				)
+				item_names = list("гаечный ключ", "отвёртка", "маркиратор", "фотоаппарат", "сварочный аппарат")
+				reward_min = 15
+				reward_max = 25
+				tc_min = 2
+				tc_max = 3
+			if("hard")
+				item_types = list(
+					/obj/item/multitool,
+					/obj/item/stack/sheet/plasteel,
+				)
+				item_names = list("мультитул", "лист пластали")
+				reward_min = 35
+				reward_max = 50
+				tc_min = 4
+				tc_max = 5
+
+		var/item_index = rand(1, length(item_types))
+		var/required_item_type = item_types[item_index]
+		var/item_name = item_names[item_index]
+		var/datum/traitor_contract/contract = generate_contract(
+			"item_retrieval",
+			"station",
+			item_name,
+			required_item_type,
+		)
+		contract.item_tier = item_tier
+		contract.reward_tc = rand(tc_min, tc_max)
+		contract.tc_drop_chance = rand(30, 45)
+		contract.reputation_reward = rand(reward_min, reward_max)
+		contract.description = "Добыть [item_name] и сдать через аплинк. Предмет будет изъят."
+		uplink_handler?.on_update()
+		return contract
+
+	proc/complete_item_contract(mob/living/user, contract_id)
+		if(!user || user.stat == DEAD || !user.mind?.has_antag_datum(/datum/antagonist/traitor))
+			return FALSE
+		var/datum/traitor_contract/item_contract
+		for(var/datum/traitor_contract/contract as anything in active_contracts)
+			if(contract.contract_type == "item_retrieval" && contract.contract_id == contract_id && !contract.accepted)
+				item_contract = contract
+				break
+		if(!item_contract)
+			return FALSE
+
+		var/obj/item/turned_in_item
+		for(var/obj/item/item as anything in user.get_all_contents())
+			if(istype(item, item_contract.required_item))
+				turned_in_item = item
+				break
+		if(!turned_in_item)
+			to_chat(user, span_warning("У вас нет предмета для этого контракта."))
+			return FALSE
+
+		item_contract.accepted = TRUE
+		qdel(turned_in_item)
+		var/tc_reward = prob(item_contract.tc_drop_chance) ? item_contract.reward_tc : 0
+		if(tc_reward)
+			uplink_handler?.add_telecrystals(tc_reward)
+			total_tc += tc_reward
+			earned_tc += tc_reward
+		add_reputation(item_contract.reputation_reward)
+		remove_contract(item_contract)
+		to_chat(user, span_notice("Контракт выполнен. Награда: [item_contract.reputation_reward] REP[tc_reward ? " и [tc_reward] TC" : "; в этот раз без TC"]."))
+		return TRUE
+
+	proc/create_agent_event(event_name, description, location = "unknown", event_id = "", reward_tc = 10, reward_reputation = 300, tc_drop_chance = 100)
 		var/datum/traitor_event/event = new
-		event.Initialize(event_name, description, location, 10, 300, TRUE, 5)
+		event.Initialize(event_name, description, location, reward_tc, reward_reputation, TRUE, 5, event_id, tc_drop_chance)
 		services.add_event(event)
 		active_events += event
+		uplink_handler?.on_update()
 		return event
+
+	proc/complete_assassination(datum/traitor_contract/contract, smited = FALSE)
+		if(!contract || contract.accepted)
+			return FALSE
+		contract.accepted = TRUE
+		var/tc_reward = smited ? 10 : (prob(contract.tc_drop_chance) ? contract.reward_tc : 0)
+		if(tc_reward)
+			uplink_handler?.add_telecrystals(tc_reward)
+			total_tc += tc_reward
+			earned_tc += tc_reward
+		add_reputation(contract.reputation_reward)
+		remove_contract(contract)
+		if(antagonist_owner?.owner?.current)
+			to_chat(antagonist_owner.owner.current, span_notice("Цель устранена. Награда: [contract.reputation_reward] REP[tc_reward ? " и [tc_reward] TC" : "; в этот раз без TC"]."))
+		return tc_reward
+
+	proc/remove_contract(datum/traitor_contract/contract)
+		if(!contract)
+			return FALSE
+		active_contracts -= contract
+		services.contracts -= contract
+		uplink_handler?.on_update()
+		return TRUE
+
+	proc/remove_event(datum/traitor_event/event)
+		if(!event)
+			return FALSE
+		active_events -= event
+		services.open_events -= event
+		qdel(event)
+		uplink_handler?.on_update()
+		return TRUE
 
 	proc/request_reinforcement(location, cost_tc = 4)
 		if(cost_tc > total_tc)
@@ -247,30 +411,31 @@
 
 		if(event_name == "very_important_cargo")
 			if(success)
-				total_tc += 10
-				earned_tc += 10
+				total_tc += 5
+				earned_tc += 5
+				uplink_handler?.add_telecrystals(5)
 				successful_infiltrations += 1
-				add_reputation(300)
+				add_reputation(20)
 				result["result"] = "success"
-				result["tc_gained"] = 10
-				result["rep_gained"] = 300
+				result["tc_gained"] = 5
+				result["rep_gained"] = 20
 				return result
 			else
-				total_tc += 3
-				earned_tc += 3
 				result["result"] = "failed"
-				result["tc_gained"] = 3
 				return result
 
 		if(event_name == "kill_but_not_finished")
 			if(success)
-				total_tc += 10
-				earned_tc += 10
+				var/tc_reward = prob(35) ? 5 : 0
+				if(tc_reward)
+					total_tc += tc_reward
+					earned_tc += tc_reward
+					uplink_handler?.add_telecrystals(tc_reward)
 				successful_infiltrations += 1
-				add_reputation(300)
+				add_reputation(20)
 				result["result"] = "success"
-				result["tc_gained"] = 10
-				result["rep_gained"] = 300
+				result["tc_gained"] = tc_reward
+				result["rep_gained"] = 20
 				return result
 			else
 				total_tc += 2
@@ -294,10 +459,48 @@
 		return contracts
 
 	proc/build_tgui_payload()
+		var/list/tier_data = list()
+		for(var/list/tier as anything in TRAITOR_REPUTATION_TIERS)
+			tier_data += list(list(
+				"threshold" = tier["threshold"],
+				"bonus_tc" = tier["bonus_tc"],
+				"unlocks" = tier["unlocks"],
+				"threat_level" = tier["threat_level"],
+			))
+
+		var/list/contract_data = list()
+		for(var/datum/traitor_contract/contract as anything in active_contracts)
+			contract_data += list(list(
+				"type" = contract.contract_type,
+				"description" = contract.description,
+				"location" = contract.location,
+				"target" = contract.required_target,
+				"role" = contract.required_role,
+				"item_tier" = contract.item_tier,
+				"tc_drop_chance" = contract.tc_drop_chance,
+				"contract_id" = contract.contract_id,
+				"can_turn_in" = contract.contract_type == "item_retrieval",
+				"reward_tc" = contract.reward_tc,
+				"reputation_reward" = contract.reputation_reward,
+			))
+
+		var/list/event_data = list()
+		for(var/datum/traitor_event/event as anything in active_events)
+			event_data += list(list(
+				"id" = event.event_id,
+				"name" = event.event_name,
+				"description" = event.description,
+				"location" = event.location,
+				"reward_tc" = event.reward_tc,
+				"reward_reputation" = event.reward_reputation,
+				"tc_drop_chance" = event.tc_drop_chance,
+			))
+
 		var/list/payload = list(
 			"name" = name,
 			"player_name" = name,
 			"reputation" = reputation,
+			"passive_reputation_gain" = passive_reputation_gain,
 			"total_tc" = total_tc,
 			"earned_tc" = earned_tc,
 			"spent_tc" = spent_tc,
@@ -306,6 +509,7 @@
 			"threat_level" = threat_level,
 			"agent_preview_id" = agent_preview_id,
 			"tier" = get_current_tier(),
+			"tiers" = tier_data,
 			"stats" = list(
 				"completed_goals" = completed_goals,
 				"successful_infiltrations" = successful_infiltrations,
@@ -313,8 +517,8 @@
 				"earned_tc" = earned_tc
 			),
 			"services" = list(
-				"contracts" = services.contracts,
-				"events" = services.open_events,
+				"contracts" = contract_data,
+				"events" = event_data,
 				"market_items" = services.market_items
 			),
 			"tabs" = list("services", "reinforcement", "black_market")
@@ -327,16 +531,16 @@
 		return list()
 
 /datum/traitor
-	var/name = "Traitor"
+	var/name = "Предатель"
 	var/datum/traitor_reputation_system/reputation_system = null
 	var/datum/uplink_controller/uplink_controller = null
 	var/list/uplink_tabs = list()
 	var/has_uplink = TRUE
 
-	proc/Initialize(player_name = "Traitor")
-		name = player_name ? ckey(player_name) : "Traitor"
+	proc/Initialize(player_name = "Предатель")
+		name = player_name ? ckey(player_name) : "Предатель"
 		if(!name || name == "")
-			name = "Traitor"
+			name = "Предатель"
 		uplink_controller = new
 		reputation_system = new
 		reputation_system.Initialize(src, uplink_controller)

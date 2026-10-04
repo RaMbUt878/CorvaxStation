@@ -40,6 +40,13 @@
 	min_pop = 3
 	max_antag_cap = list("denominator" = 24)
 
+/datum/dynamic_ruleset/roundstart/traitor/New(list/dynamic_config)
+	var/traitor_scaling_coeff = CONFIG_GET(number/traitor_scaling_coeff)
+	if(traitor_scaling_coeff > 0)
+		min_antag_cap = list("denominator" = traitor_scaling_coeff * 1.5)
+		max_antag_cap = list("denominator" = rand(round(traitor_scaling_coeff), round(traitor_scaling_coeff * 1.5)))
+	return ..()
+
 /datum/dynamic_ruleset/roundstart/traitor/assign_role(datum/mind/candidate)
 	candidate.add_antag_datum(/datum/antagonist/traitor)
 
