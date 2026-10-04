@@ -82,8 +82,8 @@
 
 	var/list/event = system.apply_event_reward("very_important_cargo", TRUE)
 	ASSERT(event["result"] == "success")
-	ASSERT(event["tc_gained"] == 10)
-	ASSERT(event["rep_gained"] == 300)
+	ASSERT(event["tc_gained"] == 5)
+	ASSERT(event["rep_gained"] == 20)
 
 	var/datum/traitor_event/new_event = system.create_agent_event("very_important_cargo", "Cargo key has been intercepted. Deliver it to the drop site.", "engineering")
 	ASSERT(new_event)

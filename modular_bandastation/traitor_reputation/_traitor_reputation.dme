@@ -4,3 +4,4 @@
 #include "code/traitor_reputation.dm"
 #include "code/uplink_services.dm"
 #include "code/tgui_uplink.dm"
+#include "code/traitor_integration.dm"

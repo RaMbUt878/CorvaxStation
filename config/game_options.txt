@@ -107,12 +107,14 @@ REPEATED_MODE_ADJUST 45 30 10
 ## The amount of time it takes for the emergency shuttle to be called, from round start.
 SHUTTLE_REFUEL_DELAY 12000
 
-## Variables calculate how number of antagonists will scale to population.
-## Used as (Antagonists = Population / Coeff)
-## Set to 0 to disable scaling and use default numbers instead.
-TRAITOR_SCALING_COEFF 6
-BROTHER_SCALING_COEFF 6
-CHANGELING_SCALING_COEFF 6
+## Добавлен скейл антагов для ПРа с реворком репутации.
+## Используется как (Антаг / коэф * 1.5)
+## Поставьте на 0, чтобы использовать стандартные числа
+## Всё является рандомизированным, для советов обращаться к автору ПРа - @rambut1337 - discord
+## На 50 онлайна, выдаёт от 3 до 5 трейторов, можно закастомизировать
+TRAITOR_SCALING_COEFF 12
+BROTHER_SCALING_COEFF 8
+CHANGELING_SCALING_COEFF 8
 
 ## Variables calculate how number of open security officer positions will scale to population.
 ## Used as (Officers = Population / Coeff)

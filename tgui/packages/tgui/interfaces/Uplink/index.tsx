@@ -1,9 +1,12 @@
-import { Component } from 'react';
+import { Component, useState } from 'react';
 import {
   Box,
   Button,
+  Collapsible,
   Dimmer,
+  Modal,
   NoticeBox,
+  ProgressBar,
   Section,
   Stack,
   Tabs,
@@ -58,6 +61,56 @@ type UplinkData = {
   purchased_items: number;
   shop_locked: BooleanLike;
   can_renegotiate: BooleanLike;
+  traitor_reputation?: TraitorReputationData;
+};
+
+type TraitorReputationData = {
+  name: string;
+  reputation: number;
+  passive_reputation_gain: number;
+  threat_level: string;
+  tier: {
+    threshold: number;
+    bonus_tc: number;
+    unlocks: string[];
+    threat_level: string;
+  };
+  tiers: {
+    threshold: number;
+    bonus_tc: number;
+    unlocks: string[];
+    threat_level: string;
+  }[];
+  stats: {
+    completed_goals: number;
+    successful_infiltrations: number;
+    spent_tc: number;
+    earned_tc: number;
+  };
+  services: {
+    contracts: {
+      contract_id: string;
+      type: string;
+      description: string;
+      location: string;
+      target: string;
+      can_turn_in: BooleanLike;
+      item_tier: string;
+      tc_drop_chance: number;
+      reward_tc: number;
+      reputation_reward: number;
+    }[];
+    events: {
+      id: string;
+      name: string;
+      description: string;
+      location: string;
+      reward_tc: number;
+      reward_reputation: number;
+      tc_drop_chance: number;
+    }[];
+    market_items: string[];
+  };
 };
 
 type UplinkState = {
@@ -77,6 +130,273 @@ type ItemExtraData = Item & {
     icon: string;
     icon_state: string;
   };
+};
+
+const threatLevelLabels: Record<string, string> = {
+  caution: 'Осторожность',
+  warning: 'Предупреждение',
+  high_alert: 'Высокая тревога',
+  critical: 'Критический',
+  neutral: 'Нейтральный',
+};
+
+const contractTypeLabels: Record<string, string> = {
+  assassination: 'Устранение цели',
+  delivery: 'Доставка',
+  execution: 'Ликвидация',
+  intel: 'Сбор разведданных',
+  item_retrieval: 'Добыча предмета',
+  retrieval: 'Извлечение',
+  sabotage: 'Саботаж',
+};
+
+const contractLocationLabels: Record<string, string> = {
+  cargo: 'Карго',
+  command: 'Командование',
+  engineering: 'Инженерный отдел',
+  medical: 'Медицинский отдел',
+  mining: 'Шахтёрский отдел',
+  random: 'Случайный сектор',
+  science: 'Научный отдел',
+  security: 'Служба безопасности',
+  station: 'Станция',
+};
+
+const eventNameLabels: Record<string, string> = {
+  very_important_cargo: 'Перехваченный груз',
+  kill_but_not_finished: 'Контракт на устранение',
+  hitman_contract: 'Контракт киллера',
+  silent_breach: 'Тихое проникновение',
+};
+
+const perkDetails: Record<string, { name: string; description: string }> = {
+  agent_chat: {
+    name: 'Канал связи агентов',
+    description: 'Открывает доступ к закрытому каналу связи Синдиката.',
+  },
+  first_items: {
+    name: 'Снаряжение агента',
+    description: 'Открывает доступ к дополнительным предложениям аплинка.',
+  },
+  telecom_sabotage: {
+    name: 'Саботаж телекоммуникаций',
+    description:
+      'Открывает возможность саботировать телекоммуникационную сеть.',
+  },
+  threat_rise: {
+    name: 'Рост уровня угрозы',
+    description: 'Действия агента начинают привлекать больше внимания.',
+  },
+  crew_conversion: {
+    name: 'Вербовка экипажа',
+    description: 'Открывает возможность переманивать членов экипажа.',
+  },
+  bureaucratic_interest: {
+    name: 'Бюрократический интерес',
+    description: 'Действия агента вызывают дополнительную проверку документов.',
+  },
+  kill_marker: {
+    name: 'Маркер цели',
+    description: 'Позволяет отмечать приоритетные цели.',
+  },
+  evac_override: {
+    name: 'Влияние на эвакуацию',
+    description: 'Открывает возможность вмешиваться в процедуры эвакуации.',
+  },
+  department_leak: {
+    name: 'Утечка данных отдела',
+    description: 'Открывает доступ к конфиденциальным сведениям отделов.',
+  },
+};
+
+const ReputationPanel = (props: { reputation: TraitorReputationData }) => {
+  const { reputation } = props;
+  const { act } = useBackend<UplinkData>();
+  const { services, stats, tiers } = reputation;
+  const [showStatistics, setShowStatistics] = useState(false);
+  const nextTier = tiers.find((tier) => tier.threshold > reputation.reputation);
+  const previousTierThreshold = tiers.reduce(
+    (threshold, tier) =>
+      tier.threshold <= reputation.reputation ? tier.threshold : threshold,
+    0,
+  );
+  const progress = nextTier
+    ? (reputation.reputation - previousTierThreshold) /
+      (nextTier.threshold - previousTierThreshold)
+    : 1;
+
+  return (
+    <Section fill scrollable title={`Досье агента: ${reputation.name}`}>
+      {showStatistics && (
+        <Modal width="500px" align="center">
+          <Section
+            title="Статистика агента"
+            buttons={
+              <Button
+                icon="times"
+                color="bad"
+                onClick={() => setShowStatistics(false)}
+              />
+            }
+          >
+            <Stack vertical>
+              <Stack.Item>Цели выполнены: {stats.completed_goals}</Stack.Item>
+              <Stack.Item>
+                Успешные внедрения: {stats.successful_infiltrations}
+              </Stack.Item>
+              <Stack.Item>Заработано: {stats.earned_tc} TC</Stack.Item>
+              <Stack.Item>Потрачено: {stats.spent_tc} TC</Stack.Item>
+            </Stack>
+          </Section>
+        </Modal>
+      )}
+      <Stack vertical>
+        <Stack.Item>
+          <Section
+            title="Репутация и уровень угрозы"
+            buttons={
+              <Button icon="list-ol" onClick={() => setShowStatistics(true)}>
+                Статистика
+              </Button>
+            }
+          >
+            <Stack vertical>
+              <Stack.Item>
+                <Box inline bold fontSize="16px">
+                  {reputation.reputation} REP
+                </Box>
+                <Box inline ml={1} color="label">
+                  · пассивно +{reputation.passive_reputation_gain} REP/мин
+                </Box>
+              </Stack.Item>
+              <Stack.Item>
+                Уровень угрозы:{' '}
+                <Box inline bold>
+                  {threatLevelLabels[reputation.threat_level] ||
+                    reputation.threat_level}
+                </Box>
+              </Stack.Item>
+              <Stack.Item>
+                <ProgressBar value={progress} color="bad">
+                  {nextTier
+                    ? `${reputation.reputation} / ${nextTier.threshold} REP · ${nextTier.bonus_tc} TC`
+                    : `${reputation.reputation} REP · максимальный уровень`}
+                </ProgressBar>
+              </Stack.Item>
+            </Stack>
+          </Section>
+        </Stack.Item>
+        <Stack.Item>
+          <Section title="Перки и уровни допуска">
+            <Stack vertical>
+              {tiers.map((tier) => {
+                const unlocked = reputation.reputation >= tier.threshold;
+                return (
+                  <Stack.Item key={tier.threshold}>
+                    <Collapsible
+                      title={`${unlocked ? 'ДОСТУПЕН' : 'ЗАКРЫТ'} · ${tier.threshold} REP · +${tier.bonus_tc} TC`}
+                    >
+                      <Stack vertical>
+                        <Stack.Item>
+                          Уровень угрозы:{' '}
+                          {threatLevelLabels[tier.threat_level] ||
+                            tier.threat_level}
+                        </Stack.Item>
+                        {tier.unlocks.map((perk) => {
+                          const details = perkDetails[perk];
+                          return (
+                            <Stack.Item key={perk}>
+                              <Box bold>{details?.name || perk}</Box>
+                              <Box color="label">
+                                {details?.description ||
+                                  'Награда уровня репутации.'}
+                              </Box>
+                            </Stack.Item>
+                          );
+                        })}
+                      </Stack>
+                    </Collapsible>
+                  </Stack.Item>
+                );
+              })}
+            </Stack>
+          </Section>
+        </Stack.Item>
+        <Stack.Item>
+          <Section title="Контракты">
+            {services.contracts.length ? (
+              services.contracts.map((contract) => (
+                <Section
+                  key={contract.contract_id}
+                  title={`${contractTypeLabels[contract.type] || contract.type} · ${contractLocationLabels[contract.location] || contract.location}`}
+                >
+                  {contract.item_tier && (
+                    <Box bold>
+                      Сложность:{' '}
+                      {contract.item_tier === 'easy'
+                        ? 'низкая'
+                        : contract.item_tier === 'medium'
+                          ? 'средняя'
+                          : 'высокая'}
+                    </Box>
+                  )}
+                  <Box>{contract.description}</Box>
+                  <Box>
+                    {contract.item_tier
+                      ? `Награда: ${contract.reputation_reward} REP; ${contract.reward_tc} TC с шансом ${contract.tc_drop_chance}%`
+                      : `Награда: ${contract.reward_tc} TC и ${contract.reputation_reward} репутации`}
+                  </Box>
+                  {contract.can_turn_in && (
+                    <Button
+                      onClick={() =>
+                        act('traitor_reputation_action', {
+                          perk: 'complete_item_contract',
+                          contract_id: contract.contract_id,
+                        })
+                      }
+                    >
+                      Сдать предмет
+                    </Button>
+                  )}
+                </Section>
+              ))
+            ) : (
+              <Box color="label">Активных контрактов нет.</Box>
+            )}
+          </Section>
+        </Stack.Item>
+        <Stack.Item>
+          <Section title="События">
+            {services.events.length ? (
+              services.events.map((event) => (
+                <Section
+                  key={event.id}
+                  title={`${eventNameLabels[event.name] || event.name} · ${event.location}`}
+                >
+                  <Box>{event.description}</Box>
+                  {event.name === 'very_important_cargo' ? (
+                    <Box>Награда: 20 REP и 5 TC за получение кристалла</Box>
+                  ) : event.name === 'kill_but_not_finished' ? (
+                    <Box>
+                      Награда: {event.reward_reputation} REP и {event.reward_tc}{' '}
+                      TC с шансом {event.tc_drop_chance}%
+                    </Box>
+                  ) : (
+                    <Box>
+                      Награда: {event.reward_tc} TC и {event.reward_reputation}{' '}
+                      репутации
+                    </Box>
+                  )}
+                </Section>
+              ))
+            ) : (
+              <Box color="label">Активных событий нет.</Box>
+            )}
+          </Section>
+        </Stack.Item>
+      </Stack>
+    </Section>
+  );
 };
 
 // Cache response so it's only sent once
@@ -155,6 +475,7 @@ export class Uplink extends Component<any, UplinkState> {
       joined_population,
       primary_objectives,
       can_renegotiate,
+      traitor_reputation,
       extra_purchasable,
       extra_purchasable_stock,
       current_stock,
@@ -229,7 +550,7 @@ export class Uplink extends Component<any, UplinkState> {
             <Stack.Item>
               <Section fitted>
                 <Stack fill>
-                  {!!primary_objectives && (
+                  {!!(primary_objectives || traitor_reputation) && (
                     <Stack.Item grow={1}>
                       <Tabs fluid>
                         {primary_objectives && (
@@ -244,6 +565,20 @@ export class Uplink extends Component<any, UplinkState> {
                             onClick={() => this.setState({ currentTab: 0 })}
                           >
                             Основные задачи
+                          </Tabs.Tab>
+                        )}
+                        {!!traitor_reputation && (
+                          <Tabs.Tab
+                            style={{
+                              overflow: 'hidden',
+                              whiteSpace: 'nowrap',
+                              textOverflow: 'ellipsis',
+                            }}
+                            icon="chart-line"
+                            selected={currentTab === 1}
+                            onClick={() => this.setState({ currentTab: 1 })}
+                          >
+                            Репутация
                           </Tabs.Tab>
                         )}
                         <Tabs.Tab
@@ -285,36 +620,39 @@ export class Uplink extends Component<any, UplinkState> {
                   primary_objectives={primary_objectives}
                   can_renegotiate={can_renegotiate}
                 />
-              )) || (
-                <>
-                  <GenericUplink
-                    currency={`${telecrystals} TC`}
-                    categories={allCategories}
-                    items={items}
-                    handleBuy={(item: ItemExtraData) => {
-                      if (!item.extraData?.ref) {
-                        act('buy', { path: item.id });
-                      } else {
-                        act('buy', { ref: item.extraData.ref });
-                      }
-                    }}
-                  />
-                  {(shop_locked && !data.debug && (
-                    <Dimmer>
-                      <Box
-                        color="red"
-                        fontFamily={'Bahnschrift'}
-                        fontSize={3}
-                        align={'top'}
-                        as="span"
-                      >
-                        РЫНОК ЗАБЛОКИРОВАН
-                      </Box>
-                    </Dimmer>
-                  )) ||
-                    null}
-                </>
-              )}
+              )) ||
+                (currentTab === 1 && traitor_reputation && (
+                  <ReputationPanel reputation={traitor_reputation} />
+                )) || (
+                  <>
+                    <GenericUplink
+                      currency={`${telecrystals} TC`}
+                      categories={allCategories}
+                      items={items}
+                      handleBuy={(item: ItemExtraData) => {
+                        if (!item.extraData?.ref) {
+                          act('buy', { path: item.id });
+                        } else {
+                          act('buy', { ref: item.extraData.ref });
+                        }
+                      }}
+                    />
+                    {(shop_locked && !data.debug && (
+                      <Dimmer>
+                        <Box
+                          color="red"
+                          fontFamily={'Bahnschrift'}
+                          fontSize={3}
+                          align={'top'}
+                          as="span"
+                        >
+                          РЫНОК ЗАБЛОКИРОВАН
+                        </Box>
+                      </Dimmer>
+                    )) ||
+                      null}
+                  </>
+                )}
             </Stack.Item>
           </Stack>
         </Window.Content>

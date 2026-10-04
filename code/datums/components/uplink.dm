@@ -213,6 +213,10 @@
 	data["shop_locked"] = uplink_handler.shop_locked
 	data["purchased_items"] = length(uplink_handler.purchase_log?.purchase_log)
 	data["can_renegotiate"] = user.mind == uplink_handler.owner && uplink_handler.can_replace_objectives?.Invoke() == TRUE
+	if(user.mind == uplink_handler.owner)
+		var/datum/antagonist/traitor/traitor_datum = uplink_handler.owner?.has_antag_datum(/datum/antagonist/traitor)
+		if(traitor_datum?.reputation_system)
+			data["traitor_reputation"] = traitor_datum.reputation_system.build_tgui_payload()
 	return data
 
 /datum/component/uplink/ui_static_data(mob/user)
@@ -262,6 +266,10 @@
 		if("renegotiate_objectives")
 			uplink_handler.replace_objectives?.Invoke()
 			SStgui.update_uis(src)
+		if("traitor_reputation_action")
+			if(ui.user.mind != uplink_handler.owner)
+				return TRUE
+			handle_traitor_reputation_action(params["perk"], ui.user, params["contract_id"])
 	return TRUE
 
 
