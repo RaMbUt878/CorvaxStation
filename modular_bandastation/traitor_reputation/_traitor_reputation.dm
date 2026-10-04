@@ -1,3 +1,5 @@
+GLOBAL_LIST_EMPTY(traitor_agent_chat_messages)
+
 /datum/modpack/traitor_reputation
 	name = "Реворк Трейтор Репутации"
 	desc = "Изменяет систему репутации трейтора, чтобы сделать её более справедливой и интересной."
@@ -102,7 +104,7 @@
 	var/event_id = cargo_crystal_events[source]
 	if(!event_id)
 		return
-	if(!picker?.mind?.has_antag_datum(/datum/antagonist/traitor) || event_id in completed_cargo_events)
+	if(!picker?.mind?.has_antag_datum(/datum/antagonist/traitor) || (event_id in completed_cargo_events))
 		return
 	var/datum/antagonist/traitor/traitor_datum = picker.mind.has_antag_datum(/datum/antagonist/traitor)
 	var/datum/traitor_reputation_system/system = traitor_datum?.reputation_system
