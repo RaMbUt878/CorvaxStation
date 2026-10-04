@@ -135,6 +135,8 @@ export type Item = {
   desc: React.JSX.Element | string;
   population_tooltip: string;
   insufficient_population: BooleanLike;
+  locked?: BooleanLike;
+  lock_tooltip?: string;
   disabled: BooleanLike;
 };
 
@@ -186,11 +188,20 @@ const ItemList = (props: ItemListProps) => {
                           overflow: 'hidden',
                           whiteSpace: 'nowrap',
                           textOverflow: 'ellipsis',
-                          opacity: item.insufficient_population ? '0.5' : '1',
+                          opacity:
+                            item.insufficient_population || item.locked
+                              ? '0.5'
+                              : '1',
                         }}
                       >
-                        {item.insufficient_population ? (
-                          <Tooltip content={item.population_tooltip}>
+                        {item.insufficient_population || item.locked ? (
+                          <Tooltip
+                            content={
+                              item.locked
+                                ? item.lock_tooltip
+                                : item.population_tooltip
+                            }
+                          >
                             <Box>
                               <Icon mr="8px" name="lock" lineHeight="36px" />
                               {item.name}
@@ -227,7 +238,7 @@ const ItemList = (props: ItemListProps) => {
                         </Button>
                       }
                     >
-                      {item.insufficient_population ? (
+                      {item.insufficient_population || item.locked ? (
                         <Box
                           style={{
                             opacity: '0.5',
@@ -242,7 +253,9 @@ const ItemList = (props: ItemListProps) => {
                             top="-2px"
                           />
                           <p style={{ textIndent: '1.5em' }}>
-                            {item.population_tooltip}
+                            {item.locked
+                              ? item.lock_tooltip
+                              : item.population_tooltip}
                           </p>
                         </Box>
                       ) : (

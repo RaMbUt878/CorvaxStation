@@ -79,6 +79,30 @@
 		status = "requested"
 		return src
 
+/proc/get_traitor_uplink_minimum_reputation(datum/uplink_item/item)
+	if(!(item.purchasable_from & UPLINK_TRAITORS))
+		return 0
+	var/item_cost = initial(item.cost)
+	if(item_cost >= 30)
+		return 1000
+	if(item_cost >= 20)
+		return 600
+	if(item_cost >= 10)
+		return 300
+	if(item_cost >= 5)
+		return 150
+	return 0
+
+/datum/uplink_handler/proc/can_purchase_item(mob/user, datum/uplink_item/to_purchase)
+	. = ..()
+	if(!. || debug_mode)
+		return
+	var/datum/antagonist/traitor/traitor_datum = owner?.has_antag_datum(/datum/antagonist/traitor)
+	if(!traitor_datum?.reputation_system)
+		return
+	var/minimum_reputation = get_traitor_uplink_minimum_reputation(to_purchase)
+	return traitor_datum.reputation_system.reputation >= minimum_reputation
+
 /datum/traitor_reputation_system
 	var/name = "Агент"
 	var/reputation = 0
@@ -92,17 +116,18 @@
 	var/threat_level = "caution"
 	var/agent_preview_id = ""
 	var/next_random_activity = 0
+	var/random_activity_timer
 	var/datum/antagonist/traitor/antagonist_owner
 	var/datum/uplink_handler/uplink_handler
-	var/random_activity_min_delay = 5 MINUTES
-	var/random_activity_max_delay = 15 MINUTES
-	var/random_activity_chance = 20
+	var/random_activity_min_delay = 3 MINUTES
+	var/random_activity_max_delay = 5 MINUTES
 	var/datum/uplink_service_panel/services = null
 	var/datum/traitor_uplink_link/uplink_link = null
 	var/datum/uplink_controller/controller = null
 	var/datum/traitor/traitor_owner = null
 	var/list/active_contracts = list()
 	var/list/active_events = list()
+	var/datum/traitor_contract/rotating_contract
 
 	var/global/list/TRAITOR_REPUTATION_TIERS = list(
 		list("threshold" = 150, "bonus_tc" = 4, "unlocks" = list("agent_chat", "first_items"), "threat_level" = "caution"),
@@ -124,7 +149,7 @@
 			uplink_link.Initialize(src, controller)
 		traitor_owner = traitor_holder
 		agent_preview_id = traitor_holder ? "" : ""
-		generate_item_contract()
+		rotating_contract = generate_item_contract()
 		schedule_random_activity()
 		return src
 
@@ -152,12 +177,51 @@
 		update_threat_level()
 		for(var/list/tier as anything in TRAITOR_REPUTATION_TIERS)
 			var/threshold = tier["threshold"]
-			if(old_reputation < threshold && reputation >= threshold && uplink_handler)
-				var/tier_bonus = tier["bonus_tc"]
-				uplink_handler.add_telecrystals(tier_bonus)
-				earned_tc += tier_bonus
+			if(old_reputation < threshold && reputation >= threshold)
+				announce_reputation_tier(threshold)
+				if(uplink_handler)
+					var/tier_bonus = tier["bonus_tc"]
+					uplink_handler.add_telecrystals(tier_bonus)
+					earned_tc += tier_bonus
 		uplink_handler?.on_update()
 		return reputation
+
+	proc/announce_reputation_tier(threshold)
+		var/mob/living/agent = antagonist_owner?.owner?.current
+		var/species = "не установлена"
+		var/agent_gender = "не установлен"
+		var/department = "не установлен"
+		var/agent_job = "не установлена"
+		var/agent_name = "не установлено"
+
+		if(ishuman(agent))
+			var/mob/living/carbon/human/human_agent = agent
+			species = human_agent.dna?.species?.name || species
+			if(human_agent.gender == MALE)
+				agent_gender = "мужской"
+			else if(human_agent.gender == FEMALE)
+				agent_gender = "женский"
+		if(agent?.mind?.assigned_role)
+			var/datum/job/agent_role = agent.mind.assigned_role
+			var/department_type = agent_role.departments_list?[1]
+			if(department_type)
+				department = initial(department_type.department_name)
+			agent_job = job_title_ru(agent_role.title)
+		if(agent)
+			agent_name = agent.real_name
+
+		var/message
+		switch(threshold)
+			if(150)
+				message = "По неофициальным данным, на борту выявлена потенциальная угроза. Предполагаемая раса: [species]. Отдел кадров и Служба безопасности проверяют ситуацию."
+			if(300)
+				message = "Угроза подтверждена. На борту находится агент враждующей организации. Предполагаемая раса: [species], пол: [agent_gender]. Службам станции рекомендуется сохранять бдительность."
+			if(600)
+				message = "Активность вражеского агента возросла. Предполагаемая раса: [species], пол: [agent_gender]. Агент числится в отделе «[department]» на должности «[agent_job]». Службе безопасности поручено усилить контроль."
+			if(1000)
+				message = "Зафиксирована критическая угроза. Предполагаемая личность агента: [agent_name]. Его раса: [species], пол: [agent_gender], отдел: «[department]», должность: «[agent_job]». Экипажу следует передать эту информацию Службе безопасности и выполнять распоряжения командования."
+		if(message)
+			minor_announce(message, "Центральное командование", TRUE)
 
 	proc/get_current_tier()
 		var/list/current_tier = TRAITOR_REPUTATION_TIERS[1]
@@ -201,39 +265,33 @@
 		return rep_gain
 
 	proc/schedule_random_activity()
-		if(!traitor_owner)
+		if(!traitor_owner && !antagonist_owner)
 			return
 		if(next_random_activity > world.time)
 			return
 		next_random_activity = world.time + rand(random_activity_min_delay, random_activity_max_delay)
-		addtimer(CALLBACK(src, PROC_REF(spawn_random_activity)), next_random_activity - world.time, TIMER_STOPPABLE)
+		random_activity_timer = addtimer(CALLBACK(src, PROC_REF(spawn_random_activity)), next_random_activity - world.time, TIMER_STOPPABLE)
 
 	proc/spawn_random_activity()
-		if(!traitor_owner)
+		random_activity_timer = null
+		if(!traitor_owner && !antagonist_owner)
 			return
-		if(!prob(random_activity_chance))
-			schedule_random_activity()
-			return
-
-		var/location = pick("engineering", "security", "science", "medical", "cargo", "command", "mining")
-		var/contract_type = pick("delivery", "execution", "intel", "retrieval", "sabotage")
-		var/roll = rand(1, 100)
-
-		if(roll <= 65)
-			if(prob(40))
-				generate_item_contract()
-			else
-				generate_contract(contract_type, location)
+		if(rotating_contract)
+			remove_contract(rotating_contract)
+		if(prob(40))
+			rotating_contract = generate_item_contract()
 		else
-			var/list/event_templates = list(
-				list("name" = "very_important_cargo", "desc" = "Ключ груза пересёк станцию. Восстановите поставку."),
-				list("name" = "kill_but_not_finished", "desc" = "Незавершённая операция оставила след. Устраните цель."),
-				list("name" = "silent_breach", "desc" = "Оперативная группа оставила мостик в тени. Проверьте сектор."),
-			)
-			var/list/event_data = pick(event_templates)
-			create_agent_event(event_data["name"], event_data["desc"], location)
+			var/location = pick("engineering", "security", "science", "medical", "cargo", "command", "mining")
+			var/contract_type = pick("delivery", "execution", "intel", "retrieval", "sabotage")
+			rotating_contract = generate_contract(contract_type, location)
 
 		schedule_random_activity()
+
+	proc/stop_random_activity()
+		if(random_activity_timer)
+			deltimer(random_activity_timer)
+			random_activity_timer = null
+		next_random_activity = 0
 
 	proc/generate_contract(contract_type, location = "random", required_target = "", required_item = "")
 		var/reward = rand(1, 6)
@@ -379,6 +437,8 @@
 			return FALSE
 		active_contracts -= contract
 		services.contracts -= contract
+		if(contract == rotating_contract)
+			rotating_contract = null
 		uplink_handler?.on_update()
 		return TRUE
 

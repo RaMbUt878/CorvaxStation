@@ -26,6 +26,7 @@ type UplinkItem = {
   icon: string;
   icon_state: string;
   cost: number;
+  minimum_traitor_reputation?: number;
   desc: string;
   category: string;
   purchasable_from: number;
@@ -497,6 +498,10 @@ export class Uplink extends Component<any, UplinkState> {
       const item = itemsToAdd[i];
       const hasEnoughPop =
         !joined_population || joined_population >= item.population_minimum;
+      const minimumReputation = item.minimum_traitor_reputation || 0;
+      const reputationLocked =
+        !!traitor_reputation &&
+        traitor_reputation.reputation < minimumReputation;
 
       let stock: number | null = current_stock[item.stock_key];
       if (item.ref) {
@@ -512,9 +517,16 @@ export class Uplink extends Component<any, UplinkState> {
         icon: item.icon,
         icon_state: item.icon_state,
         category: item.category,
+        locked: reputationLocked,
+        lock_tooltip: `Требуется ${minimumReputation} REP`,
         desc: (
           <>
             <Box>{item.desc}</Box>
+            {reputationLocked && (
+              <NoticeBox mt={1}>
+                Для покупки требуется {minimumReputation} REP.
+              </NoticeBox>
+            )}
             {(item.lock_other_purchases && (
               <NoticeBox mt={1}>
                 Покупка этого предмета навсегда заблокирует возможность
@@ -534,6 +546,7 @@ export class Uplink extends Component<any, UplinkState> {
         disabled:
           !canBuy ||
           !hasEnoughPop ||
+          reputationLocked ||
           (item.lock_other_purchases && purchased_items > 0),
         extraData: {
           ref: item.ref,

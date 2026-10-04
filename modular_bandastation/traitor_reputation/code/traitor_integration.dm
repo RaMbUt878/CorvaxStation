@@ -11,6 +11,7 @@
 			reputation_system.name = owner.name
 	reputation_system.antagonist_owner = src
 	reputation_system.uplink_handler = uplink_handler
+	reputation_system.schedule_random_activity()
 	passive_reputation_timer = addtimer(CALLBACK(src, PROC_REF(passive_reputation_tick)), 1 MINUTES, TIMER_STOPPABLE)
 
 /datum/antagonist/traitor/proc/passive_reputation_tick()
@@ -23,6 +24,9 @@
 	if(passive_reputation_timer)
 		deltimer(passive_reputation_timer)
 		passive_reputation_timer = null
+	if(reputation_system)
+		reputation_system.stop_random_activity()
+		reputation_system.antagonist_owner = null
 	return ..()
 
 /datum/component/uplink/proc/handle_traitor_reputation_action(perk, mob/user, contract_id)
